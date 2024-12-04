@@ -172,7 +172,7 @@ def plot_graph(n_clicks,value,value_coin):
 def load_data(n_clicks,value,value_coin):
     global data_test_1
     if n_clicks > 0 :
-        tf_influxdb_1 = InfluxdbDataExtraction(host='localhost', port=8086,database="binance")
+        tf_influxdb_1 = InfluxdbDataExtraction(host='localhost', port=8086,bucket="binance")
         data_test_1 =  tf_influxdb_1.extract_data_basic(coin_id = value_coin, unit = "1h",data_to_extract = value, measurement ="minute_tick" )
         data_test_1.dropna()
        # data_test_1 =  tf_influxdb_1.extract_data_basic(coin_id = "BTCUSDT", unit = "1h",data_to_extract = ["close"], measurement ="minute_tick" )
