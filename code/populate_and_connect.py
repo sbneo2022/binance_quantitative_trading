@@ -8,7 +8,7 @@ def main():
     script_dir = os.path.dirname(__file__)
     file_path = os.path.join(script_dir, 'connection_config.yml')
     with open(file_path,'r') as ymlfile:
-        config = yaml.load(ymlfile)
+        config = yaml.load(ymlfile, Loader=yaml.FullLoader)
         public_key = config['API_keys']['public']
         private_key = config['API_keys']['private']
         crypto_symbol_list = config['connection_settings']['target_cryptos']
@@ -26,7 +26,7 @@ def main():
         is_new_db = False
     
     for i, symbol in enumerate(crypto_symbol_list):
-        connection_list[i]=BinanceInfluxdb(symbol=symbol,is_new_db=is_new_db,database='binance',api_key=public_key,api_secret=private_key)
+        connection_list[i]=BinanceInfluxdb(symbol=symbol,is_new_db=is_new_db,bucket='binance',api_key=public_key,api_secret=private_key)
         is_new_db = False #They share the database, thus, we need to create it once.
         
         # we populate the database for the first time
