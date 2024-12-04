@@ -1,6 +1,6 @@
 API_keys: # Do not share this information
-    public: insert_public_key
-    private: insert_private_key
+    public: sviVil27kXqEMp6X1xaHCa0C8F1GkIea09QVkL4Mg4Rm4a6CgxXobTd50qXprBQA
+    private: Ho0eAkaMmS8DCeKg9X8cOfSPdwNoN3E3ITFzmToD3dK2Zqpkas7hRtrNWnAXTDhN
 connection_settings:
     target_cryptos: # Add more crypto symbols if you want.
         - IOTAUSDT
