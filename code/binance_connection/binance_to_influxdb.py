@@ -46,37 +46,8 @@ class BinanceInfluxdb():
             self.get_previous_point(current_time_num)
             self.need_data_actualization = False               
 
-    def get_previous_point(self, current_time_num):
-        count = 1
-        # Convert timestamp to ISO format
-        pre_previous_time = zulu.parse(current_time_num - 60).isoformat()  # Subtract 60 seconds
-        
-        query = f'''
-        from(bucket:"{self.bucket}")
-          |> range(start: {pre_previous_time}, stop: {pre_previous_time})
-          |> filter(fn: (r) => r["_measurement"] == "{self.measurement_name}")
-          |> filter(fn: (r) => r["pair"] == "{self.symbol}")
-        '''
-        
-        result = self.query_api.query(query)
-        
-        while not result:
-            count += 1
-            pre_previous_time_loop = zulu.parse(current_time_num - count * 60).isoformat()
-            query = f'''
-            from(bucket:"{self.bucket}")
-              |> range(start: {pre_previous_time_loop}, stop: {pre_previous_time_loop})
-              |> filter(fn: (r) => r["_measurement"] == "{self.measurement_name}")
-              |> filter(fn: (r) => r["pair"] == "{self.symbol}")
-            '''
-            result = self.query_api.query(query)
-            print(f"testing_time: {pre_previous_time_loop}, count: {count}")
-            if count > 1000:
-                print("No previous data found.")
-                break
 
-        # After retrieving the previous point, you can proceed accordingly
-        # ...
+   
 
     def insert_data_point_influxdb(self, msg, measurement, msg_type):
         if msg_type == 'raw':
@@ -124,7 +95,7 @@ class BinanceInfluxdb():
             self.write_api.write(bucket=self.bucket, org=self.influx_client.org, record=point)
             print(f"Inserting message with time: {point.time}, message type: {msg_type}, measurement: {measurement}")
 
-    def create_msg_from_history(self, event_type, interval, symbol, units, num_of_units, from_now=True, from_date=0, to_date=0):
+    def create_msg_from_history(self, event_type, interval, symbol, units, num_of_units, from_now, from_date, to_date):
         if from_now:
             # Fetch historical klines
             if units == 'hour':        
@@ -203,6 +174,7 @@ class BinanceInfluxdb():
 
     def websocket_start(self):
         self.bm = BinanceSocketManager(self.client)
+        print(f"symbol: {self.symbol}")
         self.bm.start_kline_socket(self.symbol, self.online_process_message)
         self.bm.start()
         
