@@ -46,8 +46,65 @@ class BinanceInfluxdb():
             self.get_previous_point(current_time_num)
             self.need_data_actualization = False               
 
+            
+def get_previous_point(self, current_time_num):
+    count = 1
+    # Subtract 60 seconds to get the previous time
+    pre_previous_time = datetime.datetime.utcfromtimestamp(current_time_num - 60)
+    pre_previous_time_str = pre_previous_time.isoformat() + 'Z'
 
-   
+    query = f'''
+    from(bucket: "{self.bucket}")
+      |> range(start: {repr(pre_previous_time_str)}, stop: {repr(pre_previous_time_str)})
+      |> filter(fn: (r) => r["_measurement"] == "{self.measurement_name}")
+      |> filter(fn: (r) => r["pair"] == "{self.symbol}")
+    '''
+    result = self.query_api.query(query)
+
+    # Convert the result to a list to check if it's empty
+    result_list = list(result)
+
+    while not result_list:
+        count += 1
+        pre_previous_time = datetime.datetime.utcfromtimestamp(current_time_num - count * 60)
+        pre_previous_time_str = pre_previous_time.isoformat() + 'Z'
+
+        query = f'''
+        from(bucket: "{self.bucket}")
+          |> range(start: {repr(pre_previous_time_str)}, stop: {repr(pre_previous_time_str)})
+          |> filter(fn: (r) => r["_measurement"] == "{self.measurement_name}")
+          |> filter(fn: (r) => r["pair"] == "{self.symbol}")
+        '''
+        result = self.query_api.query(query)
+        result_list = list(result)
+        print(f"testing_time: {pre_previous_time_str}, count: {count}")
+        if count > 1000:
+            print("No previous data found.")
+            return  # Exit the function if no data is found after 1000 attempts
+
+    # Extract the timestamp of the found data point
+    found_time = None
+    for table in result_list:
+        for record in table.records:
+            found_time = record.get_time()
+            break  # We only need the first record
+        if found_time:
+            break
+
+    # Prepare parameters for inserting offline tick data
+    event_type = 'kline'
+    interval = '1m'
+    units = 'minute'
+    num_of_units = count + 2  # Just in case, added 2 more units
+    msg_type = 'raw'
+
+    # Convert found_time to a string format expected by Binance API
+    if found_time:
+        from_date = found_time.strftime("%d %b, %Y %H:%M:%S")
+        to_date = from_date  # Since we have a single point, from_date and to_date are the same
+        self.insert_offline_tick_data(event_type, interval, units, num_of_units, msg_type, from_now=False, from_date=from_date, to_date=to_date)
+    else:
+            print("Could not extract found_time from query result.")
 
     def insert_data_point_influxdb(self, msg, measurement, msg_type):
         if msg_type == 'raw':
